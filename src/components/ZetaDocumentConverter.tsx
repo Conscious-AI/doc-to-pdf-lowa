@@ -9,7 +9,7 @@ type ConversionStatus = 'idle' | 'loading' | 'converting' | 'success' | 'error';
 interface ZetaHelperMain {
   start: (callback: () => void) => void;
   thrPort: {
-    postMessage: (message: any) => void;
+    postMessage: (message: unknown) => void;
     onmessage: ((e: MessageEvent) => void) | null;
   };
 }
@@ -43,8 +43,7 @@ export default function ZetaDocumentConverter() {
     try {
       // Dynamically import ZetaJS helper directly (aligns with ZetaJS sample)
       const zetaUrl = '/assets/vendor/zetajs/zetaHelper.js';
-      // @ts-ignore runtime ESM import from public directory
-      const mod: any = await import(/* webpackIgnore: true */ zetaUrl);
+      const mod = await import(/* webpackIgnore: true */ zetaUrl) as { ZetaHelperMain: new (path: string, options: { threadJsType: string; wasmPkg: string }) => ZetaHelperMain };
       const ZetaHelperMain = mod.ZetaHelperMain;
       
       // Initialize ZetaJS with our office thread; use CDN (free) build
@@ -55,8 +54,8 @@ export default function ZetaDocumentConverter() {
       // Prefer qtCanvasElements to silence Qt deprecation of Module.canvas
       try {
         const canvasEl = document.getElementById('qtcanvas') as HTMLCanvasElement | null;
-        if (canvasEl && (zHM as any).Module) {
-          (zHM as any).Module.qtCanvasElements = [canvasEl];
+        if (canvasEl && (zHM as unknown as { Module?: { qtCanvasElements?: HTMLCanvasElement[] } }).Module) {
+          ((zHM as unknown as { Module: { qtCanvasElements: HTMLCanvasElement[] } }).Module).qtCanvasElements = [canvasEl];
         }
       } catch {}
       
@@ -82,7 +81,7 @@ export default function ZetaDocumentConverter() {
                 
                 // Read the converted PDF
                 const pdfData = window.FS.readFile(to);
-                const pdfBlob = new Blob([pdfData], { type: 'application/pdf' });
+                const pdfBlob = new Blob([pdfData.slice()], { type: 'application/pdf' });
                 const url = URL.createObjectURL(pdfBlob);
                 
                 setPdfUrl(url);
@@ -126,6 +125,7 @@ export default function ZetaDocumentConverter() {
   useEffect(() => {
     const timer = setTimeout(initializeZeta, 0);
     return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleFileSelect = (selectedFile: File) => {
