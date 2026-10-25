@@ -46,10 +46,10 @@ export default function ZetaDocumentConverter() {
       const mod = await import(/* webpackIgnore: true */ zetaUrl) as { ZetaHelperMain: new (path: string, options: { threadJsType: string; wasmPkg: string }) => ZetaHelperMain };
       const ZetaHelperMain = mod.ZetaHelperMain;
       
-      // Initialize ZetaJS with our office thread; use CDN (free) build
+      // Use the existing app-owned runtime distribution with correct encoding headers.
       const zHM = new ZetaHelperMain('/office_thread.js', {
         threadJsType: 'module',
-        wasmPkg: 'free'
+        wasmPkg: 'url:https://d3vb89sm9r5pew.cloudfront.net/zetaoffice/'
       });
       // Prefer qtCanvasElements to silence Qt deprecation of Module.canvas
       try {
